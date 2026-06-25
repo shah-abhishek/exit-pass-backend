@@ -26,38 +26,27 @@ jobs:
       - name: Build app if needed
         run: npm run build --if-present
 
-      - name: Validate deployment secrets
+      - name: Check deployment secrets
+        id: deployment-secrets
         env:
           HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
           HOSTINGER_USERNAME: ${{ secrets.HOSTINGER_USERNAME }}
           HOSTINGER_PASSWORD: ${{ secrets.HOSTINGER_PASSWORD }}
           HOSTINGER_PATH: ${{ secrets.HOSTINGER_PATH }}
         run: |
-          missing=0
-
-          if [ -z "$HOSTINGER_HOST" ]; then
-            echo "HOSTINGER_HOST is missing"
-            missing=1
+          if [ -n "$HOSTINGER_HOST" ] && \
+             [ -n "$HOSTINGER_USERNAME" ] && \
+             [ -n "$HOSTINGER_PASSWORD" ] && \
+             [ -n "$HOSTINGER_PATH" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "Deployment secrets found. Deployment will continue."
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "Deployment secrets are not configured. Skipping Hostinger deployment."
           fi
-
-          if [ -z "$HOSTINGER_USERNAME" ]; then
-            echo "HOSTINGER_USERNAME is missing"
-            missing=1
-          fi
-
-          if [ -z "$HOSTINGER_PASSWORD" ]; then
-            echo "HOSTINGER_PASSWORD is missing"
-            missing=1
-          fi
-
-          if [ -z "$HOSTINGER_PATH" ]; then
-            echo "HOSTINGER_PATH is missing"
-            missing=1
-          fi
-
-          exit "$missing"
 
       - name: Deploy files to Hostinger
+        if: steps.deployment-secrets.outputs.ready == 'true'
         uses: appleboy/scp-action@v0.1.6
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
@@ -70,6 +59,7 @@ jobs:
           rm: true
 
       - name: Install dependencies on server and restart app
+        if: steps.deployment-secrets.outputs.ready == 'true'
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.HOSTINGER_HOST }}
