@@ -1,4 +1,4 @@
-name: Deploy Next.js to Hostinger
+name: Deploy Node.js backend to Hostinger
 
 on:
   push:
@@ -17,13 +17,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js app
+      - name: Build app if needed
         run: npm run build --if-present
 
       - name: Deploy files to Hostinger
@@ -51,11 +51,11 @@ jobs:
           port: ${{ secrets.HOSTINGER_PORT || 22 }}
           script: |
             cd ${{ secrets.HOSTINGER_PATH }}
-            npm install --omit=dev
+            npm ci --omit=dev
             npm run build --if-present
 
-            if pm2 list | grep -q "nextjs-app"; then
-              pm2 restart nextjs-app
+            if pm2 list | grep -q "exit-pass-backend"; then
+              pm2 restart exit-pass-backend
             else
-              pm2 start npm --name nextjs-app -- start
+              pm2 start npm --name exit-pass-backend -- start
             fi
