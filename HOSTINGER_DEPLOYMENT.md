@@ -1,15 +1,15 @@
 # Hostinger deployment setup
 
-This repository currently looks like a Node.js backend project, not a Next.js
-project. The current `package.json` points to `app.js`, but it does not define a
-`start` or `build` script yet.
+This repository is a Node.js backend project. The current `package.json` points
+to `app.js` and uses `npm start` to run the server.
 
 Before using `.github/workflows/deploy-nextjs-hostinger.yml`, make sure the
-workflow matches the app you are deploying. The current workflow expects:
+workflow matches the app you are deploying. The workflow expects:
 
 - `npm ci` to install dependencies from a committed `package-lock.json`
 - `npm run build --if-present` to build the app if a build script exists
 - `npm start` to run the app through PM2 on Hostinger
+- `HOSTINGER_PASSWORD` to contain the SSH/SFTP password, not your GitHub password
 
 ## Required GitHub secrets
 
@@ -41,8 +41,7 @@ usually require a plan that supports Node.js/PM2 or a VPS.
 
 ## Required project setup
 
-Add a real start script before deploying. For example, if `app.js` starts your
-server:
+The project should include a start script like this:
 
 ```json
 {
@@ -52,18 +51,12 @@ server:
 }
 ```
 
-If you keep using `npm ci` in the workflow, commit `package-lock.json` as well.
-Without a lockfile, the GitHub Actions install step will fail.
+Because the workflow uses `npm ci`, commit `package-lock.json` as well. Without
+a lockfile, the GitHub Actions install step will fail.
 
 ## PM2 app name
 
 The workflow currently uses this PM2 process name:
-
-```text
-nextjs-app
-```
-
-For this backend project, consider renaming it in the workflow to something like:
 
 ```text
 exit-pass-backend
@@ -77,7 +70,7 @@ GitHub Actions using `workflow_dispatch`.
 At deployment time it:
 
 1. Checks out the repository.
-2. Sets up Node.js 20.
+2. Sets up Node.js 22.
 3. Installs dependencies.
 4. Runs the optional build script.
 5. Copies the repository to Hostinger.

@@ -26,6 +26,37 @@ jobs:
       - name: Build app if needed
         run: npm run build --if-present
 
+      - name: Validate deployment secrets
+        env:
+          HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
+          HOSTINGER_USERNAME: ${{ secrets.HOSTINGER_USERNAME }}
+          HOSTINGER_PASSWORD: ${{ secrets.HOSTINGER_PASSWORD }}
+          HOSTINGER_PATH: ${{ secrets.HOSTINGER_PATH }}
+        run: |
+          missing=0
+
+          if [ -z "$HOSTINGER_HOST" ]; then
+            echo "HOSTINGER_HOST is missing"
+            missing=1
+          fi
+
+          if [ -z "$HOSTINGER_USERNAME" ]; then
+            echo "HOSTINGER_USERNAME is missing"
+            missing=1
+          fi
+
+          if [ -z "$HOSTINGER_PASSWORD" ]; then
+            echo "HOSTINGER_PASSWORD is missing"
+            missing=1
+          fi
+
+          if [ -z "$HOSTINGER_PATH" ]; then
+            echo "HOSTINGER_PATH is missing"
+            missing=1
+          fi
+
+          exit "$missing"
+
       - name: Deploy files to Hostinger
         uses: appleboy/scp-action@v0.1.6
         with:
@@ -33,14 +64,10 @@ jobs:
           username: ${{ secrets.HOSTINGER_USERNAME }}
           password: ${{ secrets.HOSTINGER_PASSWORD }}
           port: ${{ secrets.HOSTINGER_PORT || 22 }}
-          source: "."
+          source: "app.js,package.json,package-lock.json"
           target: ${{ secrets.HOSTINGER_PATH }}
           overwrite: true
           rm: true
-          exclude: |
-            .git
-            .github
-            node_modules
 
       - name: Install dependencies on server and restart app
         uses: appleboy/ssh-action@v1.2.0
